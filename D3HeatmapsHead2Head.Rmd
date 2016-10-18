@@ -1,0 +1,87 @@
+
+---
+title: "Head to Head Shot Matrix"
+output: html_document
+---
+
+```{r echo=FALSE, results='hide',message=FALSE}
+library(reshape); library(stringr); library(lubridate); library(ggplot2);
+library(rvest); library(XML); library(dplyr); library(plyr);
+library(stringr); library(DataCombine); library(rvest); library(XML); library(dplyr); library(plyr);
+
+d3.game <- function(season, game) {
+  
+  library(nhlscrapr);   library(d3heatmap)
+
+  ###pull game from nhlscrapr
+  select.game <- retrieve.game (season=season, gcode=game)
+  
+  game.title <- noquote(paste0(select.game[[3]][[1]]," ",select.game[[6]]["awayscore"]," @ ",
+                       select.game[[3]][[2]]," ",select.game[[6]]["homescore"]," - ",
+                       select.game[[4]][[2]]," ",select.game[[4]][[3]]," ",select.game[[4]][[4]]))
+
+  ###limit to shot attempts
+  processed.game <- select.game[[1]] %>%
+            as.data.frame() %>%
+            filter(etype == "GOAL" | etype == "SHOT" | etype == "MISS" | etype == "BLOCK") %>%
+            filter(a5 != "" & h5 != "") %>%
+          mutate(goal = ifelse(etype=="GOAL", 1, 0),
+                   shot = 1) %>%
+          select(a1, a2, a3, a4, a5, h1, h2, h3, h4, h5, ev.team, hometeam) 
+ 
+  player.list <- select.game[[2]] %>%
+      filter(pos != "G") %>%
+      select(numfirstlast, hometeam)
+
+  ###create player list for home & away
+  home.player.list <- player.list %>% filter(hometeam == 1) %>% select(numfirstlast) %>% as.list()
+  away.player.list <- player.list %>% filter(hometeam == 0) %>% select(numfirstlast) %>% as.list()
+
+  home.player.list <- home.player.list[[1]]
+  away.player.list <- away.player.list[[1]]
+  
+  ###create empty shot matrix
+  shot.mat <- as.data.frame(matrix(ncol=length(away.player.list), nrow=length(home.player.list)))
+  colnames(shot.mat) <- away.player.list
+  rownames(shot.mat) <- home.player.list
+  
+  ###create shot matrix, for each home and away skater cumulative shot count for home player
+  for(i in home.player.list) {
+
+    for(j in away.player.list) {
+  
+             home.shot.tally.v1 <- processed.game %>%
+                  filter((h1 == i | h2 == i | h3 == i | h4 == i | h5 == i) &
+                           (a1 == j | a2 == j | a3 == j | a4 == j | a5 == j)) %>%
+                  mutate(home.shot = ifelse(ev.team == hometeam, 1, -1))
+          
+             value <- ifelse(length(home.shot.tally.v1$home.shot) > 0,
+                          sum(home.shot.tally.v1$home.shot),
+                          NA)
+             shot.mat[i, j] <- value
+    }
+  }
+  
+  ###ensure row & column has values
+  shot.mat <- shot.mat[rowSums(is.na(shot.mat))!=ncol(shot.mat), ]
+  shot.mat <- shot.mat[, colSums(is.na(shot.mat))!=nrow(shot.mat)]
+  
+  ###plot d3heatmap
+  return(list(d3heatmap(shot.mat, xaxis_font_size = 8, yaxis_font_size = 8, na.rm = TRUE),game.title))
+}
+
+game.mat <- d3.game("20162017","20035")
+```
+Blue represents strong shot metrics for home team players (rows) relative to teammates.   Home player success ordered from top to bottom.   Away team players (columns) team relative shot attempt differentiate ordered left to right, red is preferable.
+
+Dendrograms represent agglomerative hierarchical clustering is based on player shot attempt result similarity to teammates.
+   Linemates are likely to be clustered together.
+
+## `r noquote(game.mat[[2]])`
+
+```{r echo=FALSE}
+game.mat[[1]]
+```
+[Twitter](http://twitter.com/CrowdScoutSprts) @crowdscoutsprts
+
+[Website: CrowdScout Sports](http://www.crowdscoutsports.com)
