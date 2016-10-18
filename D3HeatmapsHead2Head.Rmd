@@ -5,13 +5,10 @@ output: html_document
 ---
 
 ```{r echo=FALSE, results='hide',message=FALSE}
-library(reshape); library(stringr); library(lubridate); library(ggplot2);
-library(rvest); library(XML); library(dplyr); library(plyr);
-library(stringr); library(DataCombine); library(rvest); library(XML); library(dplyr); library(plyr);
 
 d3.game <- function(season, game) {
   
-  library(nhlscrapr);   library(d3heatmap)
+  library(nhlscrapr);   library(d3heatmap); library(dplyr); 
 
   ###pull game from nhlscrapr
   select.game <- retrieve.game (season=season, gcode=game)
@@ -70,6 +67,7 @@ d3.game <- function(season, game) {
   return(list(d3heatmap(shot.mat, xaxis_font_size = 8, yaxis_font_size = 8, na.rm = TRUE),game.title))
 }
 
+###select season and game of interest
 game.mat <- d3.game("20162017","20035")
 ```
 Blue represents strong shot metrics for home team players (rows) relative to teammates.   Home player success ordered from top to bottom.   Away team players (columns) team relative shot attempt differentiate ordered left to right, red is preferable.
