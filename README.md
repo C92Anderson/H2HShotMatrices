@@ -2,6 +2,9 @@
 
 With R and RStudio installed, download H2HShotMatrices.Rmd file. This is a markdown file that combines text and a graphic.
 
+Be sure to install the necessary packages for this graphic, copy and paste the following into the console:
+install.packages("nhlscrapr");   install.packages("d3heatmap"); install.packages("dplyr"); 
+
 On line 71 enter the season (ie. "20162017") and game code can be found by hovering over the game link on NHL.com, 
 ranging from 20001 to 21230 during the regular season. The game code can also be found in the URL, see image in this repo for an example of game 1 of this season (20001).
 
